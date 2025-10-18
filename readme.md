@@ -11,7 +11,7 @@ Uses the selected text or clipboard as title or url. \
 And grabs the title from the url if available.
 
 
-## Recommended Hotkey
+## Hotkey
 
 - Command is called "Insert Markdown Hyperlink".
 - I recommend mapping to <kbd>shift+command+k</kbd> on mac.
