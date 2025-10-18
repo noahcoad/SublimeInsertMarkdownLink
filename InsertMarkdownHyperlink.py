@@ -3,6 +3,8 @@ import sublime_plugin
 import urllib.request
 import re
 import socket
+import subprocess
+import binascii
 
 
 class InsertMarkdownHyperlinkCommand(sublime_plugin.TextCommand):
@@ -32,27 +34,37 @@ class InsertMarkdownHyperlinkCommand(sublime_plugin.TextCommand):
 						view.sel().clear()
 						view.sel().add(sublime.Region(new_pos, new_pos))
 				else:
-					# No URL under cursor, check clipboard
-					clipboard_text = sublime.get_clipboard().strip()
-					if self.is_url(clipboard_text):
-						title = self.get_url_title(clipboard_text, view)
-						hyperlink = "[{}]({})".format(title, clipboard_text)
+					# No URL under cursor, check clipboard for rich content first
+					rich_content = self.get_rich_clipboard_content()
+					if rich_content:
+						title, url = rich_content
+						hyperlink = "[{}]({})".format(title, url)
 						view.insert(edit, region.begin(), hyperlink)
-						if title:
-							# Select the title text for easy editing
-							title_start = region.begin() + 1
-							title_end = title_start + len(title)
-							view.sel().clear()
-							view.sel().add(sublime.Region(title_start, title_end))
+						new_pos = region.begin() + len(hyperlink)
+						view.sel().clear()
+						view.sel().add(sublime.Region(new_pos, new_pos))
+					else:
+						# Check plain text clipboard
+						clipboard_text = sublime.get_clipboard().strip()
+						if self.is_url(clipboard_text):
+							title = self.get_url_title(clipboard_text, view)
+							hyperlink = "[{}]({})".format(title, clipboard_text)
+							view.insert(edit, region.begin(), hyperlink)
+							if title:
+								# Select the title text for easy editing
+								title_start = region.begin() + 1
+								title_end = title_start + len(title)
+								view.sel().clear()
+								view.sel().add(sublime.Region(title_start, title_end))
+							else:
+								new_pos = region.begin() + 1
+								view.sel().clear()
+								view.sel().add(sublime.Region(new_pos, new_pos))
 						else:
+							view.insert(edit, region.begin(), "[]()")
 							new_pos = region.begin() + 1
 							view.sel().clear()
 							view.sel().add(sublime.Region(new_pos, new_pos))
-					else:
-						view.insert(edit, region.begin(), "[]()")
-						new_pos = region.begin() + 1
-						view.sel().clear()
-						view.sel().add(sublime.Region(new_pos, new_pos))
 			else:
 				# Text is selected
 				selected_text = view.substr(region)
@@ -74,25 +86,68 @@ class InsertMarkdownHyperlinkCommand(sublime_plugin.TextCommand):
 						view.sel().add(sublime.Region(new_pos, new_pos))
 				else:
 					# Selected text is not a URL, wrap it with markdown hyperlink syntax
-					# Check if clipboard contains a URL
-					clipboard_text = sublime.get_clipboard().strip()
-					if self.is_url(clipboard_text):
-						# Insert hyperlink with clipboard URL
-						hyperlink = "[{}]({})".format(selected_text, clipboard_text)
+					# Check if clipboard contains rich content first
+					rich_content = self.get_rich_clipboard_content()
+					if rich_content:
+						title, url = rich_content
+						hyperlink = "[{}]({})".format(selected_text, url)
 						view.replace(edit, region, hyperlink)
-						# Position cursor after the closing parenthesis
 						new_pos = region.begin() + len(hyperlink)
 						view.sel().clear()
 						view.sel().add(sublime.Region(new_pos, new_pos))
 					else:
-						# Insert hyperlink with empty URL, cursor inside parentheses
-						hyperlink = "[{}]()".format(selected_text)
-						view.replace(edit, region, hyperlink)
-						# Position cursor inside parentheses
-						new_pos = region.begin() + len(selected_text) + 3
-						view.sel().clear()
-						view.sel().add(sublime.Region(new_pos, new_pos))
+						# Check plain text clipboard for URL
+						clipboard_text = sublime.get_clipboard().strip()
+						if self.is_url(clipboard_text):
+							# Insert hyperlink with clipboard URL
+							hyperlink = "[{}]({})".format(selected_text, clipboard_text)
+							view.replace(edit, region, hyperlink)
+							# Position cursor after the closing parenthesis
+							new_pos = region.begin() + len(hyperlink)
+							view.sel().clear()
+							view.sel().add(sublime.Region(new_pos, new_pos))
+						else:
+							# Insert hyperlink with empty URL, cursor inside parentheses
+							hyperlink = "[{}]()".format(selected_text)
+							view.replace(edit, region, hyperlink)
+							# Position cursor inside parentheses
+							new_pos = region.begin() + len(selected_text) + 3
+							view.sel().clear()
+							view.sel().add(sublime.Region(new_pos, new_pos))
 	
+	def get_rich_clipboard_content(self):
+		"""Extract title and URL from RTF or HTML clipboard content on macOS"""
+		try:
+			# Try HTML first (more common for web links)
+			proc = subprocess.Popen(['osascript', '-e', 'the clipboard as «class HTML»'], 
+				stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+			stdout, stderr = proc.communicate()
+			if proc.returncode == 0 and stdout.strip():
+				html_hex = stdout.decode('utf-8').strip()
+				if html_hex.startswith('«data HTML') and html_hex.endswith('»'):
+					hex_data = html_hex[10:-1]  # Remove «data HTML and »
+					try:
+						html_data = binascii.unhexlify(hex_data).decode('utf-8')
+						link_match = re.search(r'<a[^>]+href=["\']([^"\']+)["\'][^>]*>([^<]+)</a>', html_data, re.IGNORECASE)
+						if link_match:
+							return link_match.group(2).strip(), link_match.group(1)
+					except:
+						pass
+			
+			# Try RTF as fallback
+			proc = subprocess.Popen(['osascript', '-e', 'the clipboard as «class RTF »'], 
+				stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+			stdout, stderr = proc.communicate()
+			if proc.returncode == 0 and stdout.strip():
+				rtf_data = stdout.decode('utf-8').strip()
+				url_match = re.search(r'\\field.*?HYPERLINK "([^"]+)"', rtf_data)
+				text_match = re.search(r'\\fldrslt\s*([^}]+)', rtf_data)
+				if url_match and text_match:
+					return text_match.group(1).strip(), url_match.group(1)
+		except:
+			pass
+		return None
+
 	def is_url(self, text):
 		"""Simple URL detection"""
 		return text.startswith(('http://', 'https://', 'ftp://', 'www.'))
@@ -148,7 +203,7 @@ class InsertMarkdownHyperlinkCommand(sublime_plugin.TextCommand):
 	def has_internet(self):
 		"""Quick check for internet connectivity"""
 		try:
-			socket.create_connection(("8.8.8.8", 53), timeout=1)
+			socket.create_connection(("8.8.8.8", 53), timeout=0.5)
 			return True
 		except:
 			return False
