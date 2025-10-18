@@ -1,0 +1,6 @@
+[
+    {
+        "caption": "Insert Markdown Hyperlink",
+        "command": "insert_markdown_hyperlink"
+    }
+]

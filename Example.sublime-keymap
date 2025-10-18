@@ -1,0 +1,3 @@
+[
+    { "keys": ["shift+super+k"], "command": "insert_markdown_hyperlink" },
+]
