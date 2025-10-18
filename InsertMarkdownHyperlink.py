@@ -18,7 +18,7 @@ class InsertMarkdownHyperlinkCommand(sublime_plugin.TextCommand):
 				if url_region:
 					# Found URL under cursor, use it as target
 					url_text = view.substr(url_region)
-					title = self.get_url_title(url_text)
+					title = self.get_url_title(url_text, view)
 					hyperlink = "[{}]({})".format(title, url_text)
 					view.replace(edit, url_region, hyperlink)
 					if title:
@@ -35,7 +35,7 @@ class InsertMarkdownHyperlinkCommand(sublime_plugin.TextCommand):
 					# No URL under cursor, check clipboard
 					clipboard_text = sublime.get_clipboard().strip()
 					if self.is_url(clipboard_text):
-						title = self.get_url_title(clipboard_text)
+						title = self.get_url_title(clipboard_text, view)
 						hyperlink = "[{}]({})".format(title, clipboard_text)
 						view.insert(edit, region.begin(), hyperlink)
 						if title:
@@ -125,21 +125,24 @@ class InsertMarkdownHyperlinkCommand(sublime_plugin.TextCommand):
 		"""Check if character is valid in URL"""
 		return char.isalnum() or char in '.-_~:/?#[]@!$&\'()*+,;=%'
 	
-	def get_url_title(self, url):
+	def get_url_title(self, url, view):
 		"""Fetch HTML title from HTTP/HTTPS URL"""
 		if not url.startswith(('http://', 'https://')) or not self.has_internet():
 			return ""
 		
 		try:
+			view.set_status('finding_title', 'Loading URL Title...')
 			opener = urllib.request.build_opener(urllib.request.HTTPRedirectHandler)
 			req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
 			with opener.open(req, timeout=5) as response:
 				html = response.read().decode('utf-8', errors='ignore')
 				match = re.search(r'<title[^>]*>(.*?)</title>', html, re.IGNORECASE | re.DOTALL)
-				if match:
-					return match.group(1).strip()
+				view.erase_status('finding_title')
+				if match: return match.group(1).strip()
 		except:
 			pass
+
+		view.erase_status('finding_title')
 		return ""
 	
 	def has_internet(self):

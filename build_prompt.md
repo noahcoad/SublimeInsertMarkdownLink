@@ -1,4 +1,3 @@
-started 2025-10-10 w Amazon Q CLU
 Create a Sublime Text plugin that provides a hotkey to insert a hyperlink in markdown.
 See `~/code/prj/sublime/` for exampls of other subline plugins I've written.
 And read  `https://www.sublimetext.com/docs/api_reference.html` for sublime API.
