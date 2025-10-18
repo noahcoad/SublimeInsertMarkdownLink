@@ -27,3 +27,8 @@ And grabs the title from the url if available.
 5. The cursor and text selected will be left in the spot that most likely needs to be updated
 
 Just try it. Should work 'like magic' 🪄✨🙂
+
+
+## Also
+
+Check out my other [Sublime Text packages](https://gist.github.com/noahcoad/712ba4e38467f5126eb8cedd9ecbc842)
