@@ -1,3 +1,5 @@
+# assume Python 3.3
+
 import sublime
 import sublime_plugin
 import urllib.request
@@ -5,6 +7,7 @@ import re
 import socket
 import subprocess
 import binascii
+from html.parser import HTMLParser
 
 
 class InsertMarkdownHyperlinkCommand(sublime_plugin.TextCommand):
@@ -185,20 +188,16 @@ class InsertMarkdownHyperlinkCommand(sublime_plugin.TextCommand):
 		if not url.startswith(('http://', 'https://')) or not self.has_internet():
 			return ""
 		
-		try:
-			view.set_status('finding_title', 'Loading URL Title...')
-			opener = urllib.request.build_opener(urllib.request.HTTPRedirectHandler)
-			req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-			with opener.open(req, timeout=5) as response:
-				html = response.read().decode('utf-8', errors='ignore')
-				match = re.search(r'<title[^>]*>(.*?)</title>', html, re.IGNORECASE | re.DOTALL)
-				view.erase_status('finding_title')
-				if match: return match.group(1).strip()
-		except:
-			pass
-
-		view.erase_status('finding_title')
-		return ""
+		view.set_status('finding_title', 'Loading URL Title...')
+		opener = urllib.request.build_opener(urllib.request.HTTPRedirectHandler)
+		req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+		with opener.open(req, timeout=5) as response:
+			html = response.read().decode('utf-8', errors='ignore')
+			match = re.search(r'<title[^>]*>(.*?)</title>', html, re.IGNORECASE | re.DOTALL)
+			title = HTMLParser().unescape(match.group(1).strip()) if match else ""
+			view.erase_status('finding_title')
+			
+		return title
 	
 	def has_internet(self):
 		"""Quick check for internet connectivity"""
