@@ -1,4 +1,4 @@
-# assume Python 3.3
+# assume Python 3.8
 
 import sublime
 import sublime_plugin
@@ -10,7 +10,7 @@ import binascii
 from html.parser import HTMLParser
 
 
-class InsertMarkdownHyperlinkCommand(sublime_plugin.TextCommand):
+class InsertMarkdownLinkCommand(sublime_plugin.TextCommand):
 	def run(self, edit):
 		view = self.view
 		
@@ -74,7 +74,7 @@ class InsertMarkdownHyperlinkCommand(sublime_plugin.TextCommand):
 				
 				if self.is_url(selected_text):
 					# Selected text is a URL, put it in parentheses with title in brackets
-					title = self.get_url_title(selected_text)
+					title = self.get_url_title(selected_text, view)
 					hyperlink = "[{}]({})".format(title, selected_text)
 					view.replace(edit, region, hyperlink)
 					if title:

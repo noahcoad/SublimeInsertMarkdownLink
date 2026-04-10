@@ -1,4 +1,4 @@
-# Insert Markdown Hyperlink
+# Insert Markdown Link
 
 A [Sublime Text](https://www.sublimetext.com/) Package
 
@@ -13,9 +13,9 @@ And grabs the title from the url if available.
 
 ## Hotkey
 
-- Command is called "Insert Markdown Hyperlink".
+- Command is called "Insert Markdown Link".
 - I recommend mapping to <kbd>shift+command+k</kbd> on mac.
-- To do that, 'Sublime Text' menu > 'Settings...' menu > 'Key Bindings' menu > and add `{ "keys": ["shift+super+k"], "command": "insert_markdown_hyperlink" }` to the right (user) side.
+- To do that, 'Sublime Text' menu > 'Settings...' menu > 'Key Bindings' menu > and add `{ "keys": ["shift+super+k"], "command": "insert_markdown_link" }` to the right (user) side.
 
 
 ## General Flow
