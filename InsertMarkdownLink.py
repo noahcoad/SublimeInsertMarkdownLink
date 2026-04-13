@@ -187,17 +187,24 @@ class InsertMarkdownLinkCommand(sublime_plugin.TextCommand):
 		"""Fetch HTML title from HTTP/HTTPS URL"""
 		if not url.startswith(('http://', 'https://')) or not self.has_internet():
 			return ""
-		
+
 		view.set_status('finding_title', 'Loading URL Title...')
-		opener = urllib.request.build_opener(urllib.request.HTTPRedirectHandler)
-		req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-		with opener.open(req, timeout=5) as response:
-			html = response.read().decode('utf-8', errors='ignore')
-			match = re.search(r'<title[^>]*>(.*?)</title>', html, re.IGNORECASE | re.DOTALL)
-			title = HTMLParser().unescape(match.group(1).strip()) if match else ""
+		try:
+			opener = urllib.request.build_opener(urllib.request.HTTPRedirectHandler)
+			req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+			with opener.open(req, timeout=5) as response:
+				html = response.read().decode('utf-8', errors='ignore')
+				match = re.search(r'<title[^>]*>(.*?)</title>', html, re.IGNORECASE | re.DOTALL)
+				title = HTMLParser().unescape(match.group(1).strip()) if match else ""
+				return title
+		except Exception:
+			from urllib.parse import urlparse
+			domain = urlparse(url).hostname or ""
+			if domain.startswith('www.'):
+				domain = domain[4:]
+			return domain
+		finally:
 			view.erase_status('finding_title')
-			
-		return title
 	
 	def has_internet(self):
 		"""Quick check for internet connectivity"""
