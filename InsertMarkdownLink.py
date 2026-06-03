@@ -19,8 +19,19 @@ class InsertMarkdownLinkCommand(sublime_plugin.TextCommand):
 				# Check if cursor is on a URL
 				cursor_pos = region.begin()
 				url_region = self.find_url_at_cursor(view, cursor_pos)
-				
-				if url_region:
+
+				# Check if the current line has "title, URL" or "title URL" form
+				line_region = view.line(cursor_pos)
+				line_text = view.substr(line_region)
+				title_url = self.parse_title_url(line_text)
+				if title_url:
+					title, url = title_url
+					hyperlink = "[{}]({})".format(title, url)
+					view.replace(edit, line_region, hyperlink)
+					new_pos = line_region.begin() + len(hyperlink)
+					view.sel().clear()
+					view.sel().add(sublime.Region(new_pos, new_pos))
+				elif url_region:
 					# Found URL under cursor, use it as target
 					url_text = view.substr(url_region)
 					title = self.get_url_title(url_text, view)
@@ -71,8 +82,16 @@ class InsertMarkdownLinkCommand(sublime_plugin.TextCommand):
 			else:
 				# Text is selected
 				selected_text = view.substr(region)
-				
-				if self.is_url(selected_text):
+
+				title_url_pair = self.parse_title_url(selected_text)
+				if title_url_pair:
+					t, u = title_url_pair
+					hyperlink = "[{}]({})".format(t, u)
+					view.replace(edit, region, hyperlink)
+					new_pos = region.begin() + len(hyperlink)
+					view.sel().clear()
+					view.sel().add(sublime.Region(new_pos, new_pos))
+				elif self.is_url(selected_text):
 					# Selected text is a URL, put it in parentheses with title in brackets
 					title = self.get_url_title(selected_text, view)
 					hyperlink = "[{}]({})".format(title, selected_text)
@@ -154,6 +173,17 @@ class InsertMarkdownLinkCommand(sublime_plugin.TextCommand):
 	def is_url(self, text):
 		"""Simple URL detection"""
 		return text.startswith(('http://', 'https://', 'ftp://', 'www.'))
+
+	def parse_title_url(self, text):
+		"""Parse 'title, URL' or 'title URL' into (title, url). URL must be at the end."""
+		text = text.strip()
+		if not text: return None
+		m = re.search(r'(https?://\S+|ftp://\S+|www\.\S+)\s*$', text)
+		if not m: return None
+		url = m.group(1)
+		title = text[:m.start()].rstrip().rstrip(',').rstrip()
+		if not title: return None
+		return title, url
 	
 	def find_url_at_cursor(self, view, cursor_pos):
 		"""Find URL boundaries around cursor position"""
