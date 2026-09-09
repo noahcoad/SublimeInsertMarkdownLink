@@ -3,7 +3,7 @@ started 2025-10-10 w Amazon Q CLI using prompt build_prompt.md
 InsertMarkdownLink.py (renamed from InsertMarkdownHyperlink.py)
 2026-08-14 package renamed InsertMarkdownLink -> InsertMarkdown; PasteMarkdown folded in as "Insert Markdown: Paste"
 	command ids kept/added: insert_markdown_link, insert_markdown_paste
-	old PasteMarkdown folder deleted; git remote still SublimeInsertMarkdownLink.git (rename repo later)
+	old PasteMarkdown folder deleted
 gh repo create SublimeInsertMarkdownLink --public --source=. --remote=origin --push
 gac 'add support for HTML/RTF links'
 git tag "v0.1.1"; git push origin --tags
@@ -11,7 +11,7 @@ git tag -f "v0.1.0"; git push origin -f "v0.1.0"
 ../TaskList/readme.md
 ../TaskList
 ~/code/prj/sublime/publishing_plugins.txt
-https://github.com/noahcoad/SublimeInsertMarkdownLink
+https://github.com/noahcoad/SublimeInsertMarkdown  (repo renamed from SublimeInsertMarkdownLink 2026-09-08)
 
 releases
 	v0.1.0  2025-10-17  initial release
