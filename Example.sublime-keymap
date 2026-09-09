@@ -1,3 +1,4 @@
 [
-    { "keys": ["shift+super+k"], "command": "insert_markdown_link" },
+	{ "keys": ["shift+super+k"], "command": "insert_markdown_link" },
+	{ "keys": ["shift+super+v"], "command": "insert_markdown_paste" },
 ]

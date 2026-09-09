@@ -1,6 +1,4 @@
 [
-    {
-        "caption": "Insert Markdown Link",
-        "command": "insert_markdown_link"
-    }
+	{ "caption": "Insert Markdown: Link", "command": "insert_markdown_link" },
+	{ "caption": "Insert Markdown: Paste", "command": "insert_markdown_paste" }
 ]

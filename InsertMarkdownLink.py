@@ -7,7 +7,7 @@ import re
 import socket
 import subprocess
 import binascii
-from html.parser import HTMLParser
+from html import unescape as html_unescape
 
 
 class InsertMarkdownLinkCommand(sublime_plugin.TextCommand):
@@ -152,7 +152,8 @@ class InsertMarkdownLinkCommand(sublime_plugin.TextCommand):
 						html_data = binascii.unhexlify(hex_data).decode('utf-8')
 						link_match = re.search(r'<a[^>]+href=["\']([^"\']+)["\'][^>]*>([^<]+)</a>', html_data, re.IGNORECASE)
 						if link_match:
-							return link_match.group(2).strip(), link_match.group(1)
+							# href/text come from HTML, so entities (&amp; etc) must be decoded
+							return html_unescape(link_match.group(2).strip()), html_unescape(link_match.group(1))
 					except:
 						pass
 			
@@ -225,7 +226,7 @@ class InsertMarkdownLinkCommand(sublime_plugin.TextCommand):
 			with opener.open(req, timeout=5) as response:
 				html = response.read().decode('utf-8', errors='ignore')
 				match = re.search(r'<title[^>]*>(.*?)</title>', html, re.IGNORECASE | re.DOTALL)
-				title = HTMLParser().unescape(match.group(1).strip()) if match else ""
+				title = html_unescape(match.group(1).strip()) if match else ""
 				return title
 		except Exception:
 			from urllib.parse import urlparse
